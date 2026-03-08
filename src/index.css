@@ -51,7 +51,8 @@ code {
 .page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ─── Topbar ────────────────────────────────────────────────────────── */
@@ -337,6 +338,18 @@ code {
   color: inherit;
 }
 .team-card-link:hover .team-card-name { color: var(--blue); }
+.team-name-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 1px 5px;
+  outline: none;
+}
 
 .team-card-name {
   font-weight: 600;

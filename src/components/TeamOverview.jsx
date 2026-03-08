@@ -1,12 +1,38 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useDraft } from '../context/DraftContext'
 import { remainingBudget } from '../utils/helpers'
 import { TOTAL_BUDGET, TOTAL_ROSTER_SPOTS } from '../utils/constants'
 
 export default function TeamOverview({ onPlayerDrop }) {
-  const { state } = useDraft()
+  const { state, dispatch } = useDraft()
   const [dragOverId, setDragOverId] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editValue, setEditValue] = useState('')
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (editingId) inputRef.current?.focus()
+  }, [editingId])
+
+  function startEdit(team, e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditingId(team.id)
+    setEditValue(team.name)
+  }
+
+  function commitEdit(teamId) {
+    if (editValue.trim()) {
+      dispatch({ type: 'RENAME_TEAM', teamId, name: editValue.trim() })
+    }
+    setEditingId(null)
+  }
+
+  function handleKeyDown(e, teamId) {
+    if (e.key === 'Enter') commitEdit(teamId)
+    if (e.key === 'Escape') setEditingId(null)
+  }
 
   function handleDragOver(e, teamId) {
     e.preventDefault()
@@ -52,12 +78,30 @@ export default function TeamOverview({ onPlayerDrop }) {
               onDragLeave={handleDragLeave}
               onDrop={e => handleDrop(e, team.id)}
             >
-              <Link to={`/team/${team.id}`} className="team-card-link" onClick={e => e.stopPropagation()}>
-                <span className="team-card-name">{team.name}</span>
+              <div className="team-card-link">
+                {editingId === team.id ? (
+                  <input
+                    ref={inputRef}
+                    className="team-name-input"
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onBlur={() => commitEdit(team.id)}
+                    onKeyDown={e => handleKeyDown(e, team.id)}
+                  />
+                ) : (
+                  <Link
+                    to={`/team/${team.id}`}
+                    className="team-card-name"
+                    onDoubleClick={e => startEdit(team, e)}
+                    title="Double-click to rename"
+                  >
+                    {team.name}
+                  </Link>
+                )}
                 <span className={`team-budget-compact ${remaining < 20 ? 'low' : ''}`}>
                   ${remaining}
                 </span>
-              </Link>
+              </div>
               <div className="team-mini-bar-bg">
                 <div className="team-mini-bar-fill" style={{ width: `${pct}%` }} />
               </div>
