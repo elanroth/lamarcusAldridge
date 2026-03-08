@@ -23,6 +23,7 @@ export default function TeamPage() {
   }
 
   const teamPlayers = state.players.filter(p => p.teamId === teamId)
+  const rosterPlayers = teamPlayers.filter(p => p.status !== 'rookie_keeper')
   const remaining = remainingBudget(team, state.players)
   const spent = TOTAL_BUDGET - remaining
 
@@ -47,10 +48,10 @@ export default function TeamPage() {
     }
   }
 
-  // Build roster slot display
+  // Build roster slot display (excludes rookie keepers)
   const rosterRows = []
   for (const def of ROSTER_SLOT_DEFINITIONS) {
-    const playersInSlot = teamPlayers.filter(p => p.rosterSlot === def.slot)
+    const playersInSlot = rosterPlayers.filter(p => p.rosterSlot === def.slot)
     for (let i = 0; i < def.count; i++) {
       const player = playersInSlot[i] || null
       rosterRows.push({ slot: def.slot, label: def.label, player })
@@ -59,6 +60,7 @@ export default function TeamPage() {
 
   const keepers = teamPlayers.filter(p => p.status === 'keeper')
   const purchased = teamPlayers.filter(p => p.status === 'purchased')
+  const rookieKeepers = teamPlayers.filter(p => p.status === 'rookie_keeper')
 
   return (
     <div className="page">
@@ -107,8 +109,14 @@ export default function TeamPage() {
           </div>
           <div className="budget-stat">
             <span className="budget-label">Roster</span>
-            <span className="budget-value">{teamPlayers.length}/23</span>
+            <span className="budget-value">{rosterPlayers.length}/23</span>
           </div>
+          {rookieKeepers.length > 0 && (
+            <div className="budget-stat">
+              <span className="budget-label">Rookies</span>
+              <span className="budget-value">{rookieKeepers.length}</span>
+            </div>
+          )}
         </div>
 
         <div className="team-content">
@@ -212,6 +220,46 @@ export default function TeamPage() {
                         <td className="player-name">{p.name}</td>
                         <td><span className="pos-badge">{p.position}</span></td>
                         <td><span className="slot-badge">{p.rosterSlot}</span></td>
+                        <td className="num-cell">${p.purchasedPrice}</td>
+                        <td className="num-cell">{p.dollarValue != null ? `$${p.dollarValue.toFixed(0)}` : '—'}</td>
+                        <td className={`num-cell delta ${savings == null ? '' : savings >= 0 ? 'positive' : 'negative'}`}>
+                          {savings == null ? '—' : `${savings >= 0 ? '+' : ''}$${savings.toFixed(0)}`}
+                        </td>
+                        <td>
+                          <button className="btn btn-sm btn-ghost" onClick={() => handleUnassign(p.id)}>
+                            Release
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </section>
+          )}
+
+          {/* Rookie Keepers */}
+          {rookieKeepers.length > 0 && (
+            <section className="players-section">
+              <h2 className="section-title rookie-keeper-title">Rookie Keepers ({rookieKeepers.length})</h2>
+              <table className="player-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>Keeper Price</th>
+                    <th>Proj $</th>
+                    <th>Savings</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rookieKeepers.map(p => {
+                    const savings = p.dollarValue != null ? p.dollarValue - p.purchasedPrice : null
+                    return (
+                      <tr key={p.id} className="rookie-keeper-row">
+                        <td className="player-name">{p.name}</td>
+                        <td><span className="pos-badge">{p.position}</span></td>
                         <td className="num-cell">${p.purchasedPrice}</td>
                         <td className="num-cell">{p.dollarValue != null ? `$${p.dollarValue.toFixed(0)}` : '—'}</td>
                         <td className={`num-cell delta ${savings == null ? '' : savings >= 0 ? 'positive' : 'negative'}`}>

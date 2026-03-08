@@ -12,6 +12,7 @@ export default function AddKeeperModal({ onClose }) {
   const [price, setPrice] = useState('')
   const [rosterSlot, setRosterSlot] = useState('')
   const [useCustom, setUseCustom] = useState(false)
+  const [isRookieKeeper, setIsRookieKeeper] = useState(false)
 
   const availablePlayers = state.players.filter(p => p.status === 'available')
 
@@ -36,33 +37,31 @@ export default function AddKeeperModal({ onClose }) {
   )
 
   const slotOptions = useMemo(() =>
-    selectedPlayer && teamId
+    selectedPlayer && teamId && !isRookieKeeper
       ? availableSlotsForPlayer(selectedPlayer.position, teamPlayers)
       : [],
-    [selectedPlayer, teamPlayers, teamId]
+    [selectedPlayer, teamPlayers, teamId, isRookieKeeper]
   )
 
   const budget = selectedTeam ? remainingBudget(selectedTeam, state.players) : null
   const priceNum = parseFloat(price)
   const overBudget = budget != null && !isNaN(priceNum) && priceNum > budget
 
+  const canSubmit = selectedPlayer && teamId && price !== '' && !overBudget &&
+    (isRookieKeeper || rosterSlot !== '')
+
   function handleSubmit(e) {
     e.preventDefault()
-    if (!selectedPlayer || !teamId || !rosterSlot || price === '') return
+    if (!canSubmit) return
 
     if (useCustom && selectedPlayer.id === '__custom__') {
-      // First add the custom player, then assign them
-      const newId = uid()
-      dispatch({ type: 'ADD_CUSTOM_PLAYER', name: customName, position: customPos, _id: newId })
-      // We need to dispatch assign after state update — work around by using a timeout
-      // Actually, let's do it differently: create a synthetic player and dispatch both
-      // Instead, we'll add & assign atomically via a combined action
       dispatch({
         type: 'ADD_AND_ASSIGN_KEEPER',
         player: { name: customName, position: customPos.toUpperCase() },
         teamId,
         price: priceNum,
-        rosterSlot,
+        rosterSlot: isRookieKeeper ? null : rosterSlot,
+        isRookieKeeper,
       })
     } else {
       dispatch({
@@ -70,8 +69,9 @@ export default function AddKeeperModal({ onClose }) {
         playerId: selectedPlayer.id,
         teamId,
         price: priceNum,
-        rosterSlot,
-        isKeeper: true,
+        rosterSlot: isRookieKeeper ? null : rosterSlot,
+        isKeeper: !isRookieKeeper,
+        isRookieKeeper,
       })
     }
     onClose()
@@ -86,7 +86,26 @@ export default function AddKeeperModal({ onClose }) {
         </div>
         <form onSubmit={handleSubmit} className="modal-body">
 
+          {/* Keeper type toggle */}
           <div className="tab-toggle">
+            <button
+              type="button"
+              className={`tab-btn ${!isRookieKeeper ? 'active' : ''}`}
+              onClick={() => { setIsRookieKeeper(false); setRosterSlot('') }}
+            >
+              Keeper
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${isRookieKeeper ? 'active' : ''}`}
+              onClick={() => { setIsRookieKeeper(true); setRosterSlot('') }}
+            >
+              Rookie Keeper
+            </button>
+          </div>
+
+          {/* Player source toggle */}
+          <div className="tab-toggle" style={{ marginTop: 6 }}>
             <button
               type="button"
               className={`tab-btn ${!useCustom ? 'active' : ''}`}
@@ -186,7 +205,7 @@ export default function AddKeeperModal({ onClose }) {
             <input
               className={`input ${overBudget ? 'input-error' : ''}`}
               type="number"
-              min="1"
+              min="0"
               max="260"
               value={price}
               onChange={e => setPrice(e.target.value)}
@@ -197,40 +216,48 @@ export default function AddKeeperModal({ onClose }) {
             )}
           </div>
 
-          <div className="form-group">
-            <label>Roster Slot</label>
-            {selectedPlayer && teamId ? (
-              slotOptions.length > 0 ? (
-                <select
-                  className="input"
-                  value={rosterSlot}
-                  onChange={e => setRosterSlot(e.target.value)}
-                >
-                  <option value="">— Select slot —</option>
-                  {slotOptions.map(s => (
-                    <option key={s.slot} value={s.slot}>
-                      {s.label} ({s.remaining} open)
-                    </option>
-                  ))}
-                </select>
+          {!isRookieKeeper && (
+            <div className="form-group">
+              <label>Roster Slot</label>
+              {selectedPlayer && teamId ? (
+                slotOptions.length > 0 ? (
+                  <select
+                    className="input"
+                    value={rosterSlot}
+                    onChange={e => setRosterSlot(e.target.value)}
+                  >
+                    <option value="">— Select slot —</option>
+                    {slotOptions.map(s => (
+                      <option key={s.slot} value={s.slot}>
+                        {s.label} ({s.remaining} open)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="field-error">No eligible open slots on this team.</p>
+                )
               ) : (
-                <p className="field-error">No eligible open slots on this team.</p>
-              )
-            ) : (
-              <select className="input" disabled>
-                <option>Select player and team first</option>
-              </select>
-            )}
-          </div>
+                <select className="input" disabled>
+                  <option>Select player and team first</option>
+                </select>
+              )}
+            </div>
+          )}
+
+          {isRookieKeeper && (
+            <p className="field-hint" style={{ marginTop: 2 }}>
+              Rookie keepers don't occupy a roster slot and are tracked separately.
+            </p>
+          )}
 
           <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
             <button
               type="submit"
               className="btn btn-accent"
-              disabled={!selectedPlayer || !teamId || !rosterSlot || price === '' || overBudget}
+              disabled={!canSubmit}
             >
-              Add Keeper
+              Add {isRookieKeeper ? 'Rookie Keeper' : 'Keeper'}
             </button>
           </div>
         </form>

@@ -6,5 +6,6 @@ export default defineConfig({
   base: '/lamarcusAldridge/',
   server: {
     port: 3001,
+    open: true,
   },
 })

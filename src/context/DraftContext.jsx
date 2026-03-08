@@ -108,17 +108,17 @@ function reducer(state, action) {
     }
 
     case 'ASSIGN_PLAYER': {
-      // action: { playerId, teamId, price, rosterSlot, isKeeper }
+      // action: { playerId, teamId, price, rosterSlot, isKeeper, isRookieKeeper }
       return {
         ...state,
         players: state.players.map(p =>
           p.id === action.playerId
             ? {
                 ...p,
-                status: action.isKeeper ? 'keeper' : 'purchased',
+                status: action.isRookieKeeper ? 'rookie_keeper' : action.isKeeper ? 'keeper' : 'purchased',
                 teamId: action.teamId,
                 purchasedPrice: action.price,
-                rosterSlot: action.rosterSlot,
+                rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
               }
             : p
         ),
@@ -160,10 +160,10 @@ function reducer(state, action) {
         statCols: {},
         projectedValue: null,
         dollarValue: null,
-        status: 'keeper',
+        status: action.isRookieKeeper ? 'rookie_keeper' : 'keeper',
         teamId: action.teamId,
         purchasedPrice: action.price,
-        rosterSlot: action.rosterSlot,
+        rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
       }
       return { ...state, players: [...state.players, newPlayer] }
     }
