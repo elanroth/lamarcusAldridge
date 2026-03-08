@@ -12,7 +12,7 @@ function AutoLoader() {
   const { dispatch } = useDraft()
 
   useEffect(() => {
-    fetch('/data/Meltzer Baseball Values.xlsx')
+    fetch(import.meta.env.BASE_URL + 'data/Meltzer Baseball Values.xlsx')
       .then(r => r.arrayBuffer())
       .then(buffer => {
         const wb = XLSX.read(buffer, { type: 'array' })
