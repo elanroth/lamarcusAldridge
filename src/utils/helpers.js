@@ -44,7 +44,7 @@ export function uid() {
 /** Calculate remaining budget for a team given the full players list */
 export function remainingBudget(team, allPlayers) {
   const spent = allPlayers
-    .filter(p => p.teamId === team.id && p.purchasedPrice != null)
+    .filter(p => p.teamId === team.id && p.purchasedPrice != null && p.status !== 'rookie_keeper')
     .reduce((sum, p) => sum + p.purchasedPrice, 0)
   return team.budget - spent
 }

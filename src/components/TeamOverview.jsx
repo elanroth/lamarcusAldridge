@@ -65,7 +65,7 @@ export default function TeamOverview({ onPlayerDrop }) {
       <p className="sidebar-title">Teams — drag player to assign</p>
       <div className="team-cards">
         {state.teams.map(team => {
-          const roster = state.players.filter(p => p.teamId === team.id)
+          const roster = state.players.filter(p => p.teamId === team.id && p.status !== 'rookie_keeper')
           const remaining = remainingBudget(team, state.players)
           const spent = TOTAL_BUDGET - remaining
           const pct = Math.round((spent / TOTAL_BUDGET) * 100)

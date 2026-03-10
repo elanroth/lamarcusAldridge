@@ -678,6 +678,7 @@ select.input { cursor: pointer; }
 .budget-value.spent { color: var(--yellow); }
 .budget-value.remaining { color: var(--green); }
 .budget-value.low { color: var(--red); }
+.budget-rookies-note { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
 .team-content { display: flex; flex-direction: column; gap: 24px; }
 
@@ -692,6 +693,24 @@ select.input { cursor: pointer; }
 
 /* Roster grid */
 .roster-section {}
+.roster-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.roster-divider::before,
+.roster-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 .roster-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
