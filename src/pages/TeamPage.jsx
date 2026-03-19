@@ -49,14 +49,32 @@ export default function TeamPage() {
   }
 
   // Build roster slot display (excludes rookie keepers)
-  const batterRows = []
   const pitcherRows = []
+  const BATTER_GROUPS = [
+    { label: 'Catchers', slots: ['C'] },
+    { label: 'Infield',  slots: ['1B', '2B', '3B', 'SS', 'MI', 'CI'] },
+    { label: 'Outfield', slots: ['OF'] },
+    { label: 'Utility',  slots: ['UTIL'] },
+  ]
+
+  const batterGroups = BATTER_GROUPS.map(group => {
+    const rows = []
+    for (const slotName of group.slots) {
+      const def = ROSTER_SLOT_DEFINITIONS.find(d => d.slot === slotName)
+      if (!def) continue
+      const playersInSlot = rosterPlayers.filter(p => p.rosterSlot === def.slot)
+      for (let i = 0; i < def.count; i++) {
+        rows.push({ slot: def.slot, label: def.label, player: playersInSlot[i] || null })
+      }
+    }
+    return { label: group.label, rows }
+  })
+
   for (const def of ROSTER_SLOT_DEFINITIONS) {
+    if (def.slot !== 'P') continue
     const playersInSlot = rosterPlayers.filter(p => p.rosterSlot === def.slot)
-    const target = def.slot === 'P' ? pitcherRows : batterRows
     for (let i = 0; i < def.count; i++) {
-      const player = playersInSlot[i] || null
-      target.push({ slot: def.slot, label: def.label, player })
+      pitcherRows.push({ slot: def.slot, label: def.label, player: playersInSlot[i] || null })
     }
   }
 
@@ -123,32 +141,37 @@ export default function TeamPage() {
           {/* Roster Grid */}
           <section className="roster-section">
             <h2 className="section-title">Roster</h2>
-            <div className="roster-grid">
-              {batterRows.map((row, i) => (
-                <div key={i} className={`roster-slot ${row.player ? 'filled' : 'empty'} ${row.player?.status === 'keeper' ? 'keeper' : ''}`}>
-                  <div className="roster-slot-label">{row.label}</div>
-                  {row.player ? (
-                    <div className="roster-slot-player">
-                      <div className="roster-player-name">{row.player.name}</div>
-                      <div className="roster-player-meta">
-                        <span className="pos-badge">{row.player.position}</span>
-                        <span className="roster-price">${row.player.purchasedPrice}</span>
-                        {row.player.status === 'keeper' && <span className="keeper-tag">K</span>}
-                      </div>
-                      <button
-                        className="roster-remove-btn"
-                        onClick={() => handleUnassign(row.player.id)}
-                        title="Remove from roster"
-                      >
-                        ✕
-                      </button>
+            {batterGroups.map(group => (
+              <div key={group.label} className="roster-group">
+                <div className="roster-group-label">{group.label}</div>
+                <div className={`roster-grid roster-grid-${group.label.toLowerCase()}`}>
+                  {group.rows.map((row, i) => (
+                    <div key={i} className={`roster-slot ${row.player ? 'filled' : 'empty'} ${row.player?.status === 'keeper' ? 'keeper' : ''}`}>
+                      <div className="roster-slot-label">{row.label}</div>
+                      {row.player ? (
+                        <div className="roster-slot-player">
+                          <div className="roster-player-name">{row.player.name}</div>
+                          <div className="roster-player-meta">
+                            <span className="pos-badge">{row.player.position}</span>
+                            <span className="roster-price">${row.player.purchasedPrice}</span>
+                            {row.player.status === 'keeper' && <span className="keeper-tag">K</span>}
+                          </div>
+                          <button
+                            className="roster-remove-btn"
+                            onClick={() => handleUnassign(row.player.id)}
+                            title="Remove from roster"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="roster-slot-empty">Empty</div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="roster-slot-empty">Empty</div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
             <div className="roster-divider"><span>Pitchers</span></div>
             <div className="roster-grid">
               {pitcherRows.map((row, i) => (

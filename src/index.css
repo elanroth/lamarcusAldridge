@@ -770,3 +770,152 @@ select.input { cursor: pointer; }
 /* Rename form */
 .rename-form { display: flex; align-items: center; gap: 8px; }
 .rename-input { width: 220px; }
+
+/* ─── View toggle (Players / Standings) ────────────────────────────── */
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.view-toggle .btn { border-radius: calc(var(--radius) - 2px); }
+
+/* ─── Bidding row expansion ─────────────────────────────────────────── */
+.bidding-active { background: rgba(56, 139, 253, 0.06) !important; }
+
+.bidding-expansion-row td { padding: 0; }
+.bidding-expansion-cell {
+  padding: 12px 16px !important;
+  background: var(--surface2);
+  border-top: 1px solid var(--blue-subtle);
+  border-bottom: 2px solid var(--blue-subtle);
+}
+.bidding-expansion-header {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.bidding-teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.bidding-team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.bidding-team-card.has-slot {
+  cursor: pointer;
+  border-color: var(--green-subtle);
+}
+.bidding-team-card.has-slot:hover {
+  border-color: var(--green);
+  background: rgba(63, 185, 80, 0.08);
+}
+.bidding-team-card.no-slot {
+  opacity: 0.45;
+}
+.bidding-team-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bidding-team-budget {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--yellow);
+  font-weight: 700;
+}
+.bidding-team-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.bidding-slot-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-subtle);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.bidding-no-slot {
+  font-size: 11px;
+  color: var(--red);
+}
+
+/* ─── Roster position groups ────────────────────────────────────────── */
+.roster-group {
+  margin-bottom: 14px;
+}
+.roster-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+.roster-grid-catchers  { grid-template-columns: repeat(2, 1fr); }
+.roster-grid-infield   { grid-template-columns: repeat(3, 1fr); }
+.roster-grid-outfield  { grid-template-columns: repeat(5, 1fr); }
+.roster-grid-utility   { grid-template-columns: 1fr; }
+
+/* ─── Standings panel ───────────────────────────────────────────────── */
+.standings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 4px 0;
+}
+.standings-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.standings-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.standings-section { }
+.standings-table .standings-rank {
+  width: 30px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.standings-table tr.standings-leader td {
+  background: rgba(56, 139, 253, 0.06);
+}
+.standings-table tr.standings-leader .standings-rank {
+  color: var(--yellow);
+  font-weight: 700;
+}
+.standings-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.standings-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-dim);
+}

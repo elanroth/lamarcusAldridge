@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useDraft } from '../context/DraftContext'
 import PlayerTable from '../components/PlayerTable'
 import TeamOverview from '../components/TeamOverview'
+import StandingsPanel from '../components/StandingsPanel'
 import CSVImport from '../components/CSVImport'
 import AddTeamModal from '../components/AddTeamModal'
 import AddKeeperModal from '../components/AddKeeperModal'
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [showAddTeam, setShowAddTeam] = useState(false)
   const [showAddKeeper, setShowAddKeeper] = useState(false)
   const [dropAssign, setDropAssign] = useState(null) // { player, teamId }
+  const [view, setView] = useState('players')
 
   const availablePlayers = state.players.filter(p => p.status === 'available')
 
@@ -51,6 +53,21 @@ export default function Dashboard() {
           <span className="player-count">{availablePlayers.length} available</span>
         </div>
         <div className="topbar-right">
+          <div className="view-toggle">
+            <button
+              className={`btn btn-sm ${view === 'players' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setView('players')}
+            >
+              Players
+            </button>
+            <button
+              className={`btn btn-sm ${view === 'standings' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setView('standings')}
+            >
+              Standings
+            </button>
+          </div>
+          <div className="divider-v" />
           <CSVImport />
           <button className="btn btn-accent" onClick={() => setShowAddKeeper(true)}>
             + Add Keeper
@@ -73,7 +90,9 @@ export default function Dashboard() {
 
       <div className="dashboard-layout">
         <main className="dashboard-main">
-          {state.players.length === 0 ? (
+          {view === 'standings' ? (
+            <StandingsPanel />
+          ) : state.players.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📋</div>
               <h2>No Players Loaded</h2>
