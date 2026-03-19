@@ -68,7 +68,7 @@ export default function TeamOverview({ onPlayerDrop }) {
           const roster = state.players.filter(p => p.teamId === team.id && p.status !== 'rookie_keeper')
           const remaining = remainingBudget(team, state.players)
           const spent = TOTAL_BUDGET - remaining
-          const pct = Math.round((spent / TOTAL_BUDGET) * 100)
+          const pct = Math.min(100, Math.max(0, Math.round(((spent || 0) / TOTAL_BUDGET) * 100)))
 
           return (
             <div

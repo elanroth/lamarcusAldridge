@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useDraft } from '../context/DraftContext'
+import { availableSlotsForPlayer, remainingBudget } from '../utils/helpers'
 import AssignPlayerModal from './AssignPlayerModal'
 
 const ALL_POS_FILTER = 'All'
@@ -15,8 +16,21 @@ export default function PlayerTable({ players }) {
   const [sortKey, setSortKey] = useState('dollarValue')
   const [sortDir, setSortDir] = useState('desc')
   const [draftingPlayer, setDraftingPlayer] = useState(null)
+  const [biddingPlayerId, setBiddingPlayerId] = useState(null)
 
   const positionGroups = [ALL_POS_FILTER, 'Hitters', 'Pitchers', 'C', '1B', '2B', '3B', 'SS', 'OF', 'SP', 'RP']
+
+  const isHitterFilter = posFilter === 'Hitters' || HITTER_POSITIONS.includes(posFilter)
+  const isPitcherFilter = posFilter === 'Pitchers' || PITCHER_POSITIONS.includes(posFilter)
+
+  function getDisplayLabel(header) {
+    const parts = header.split('/')
+    if (parts.length >= 2) {
+      if (isHitterFilter) return parts[0].trim()
+      if (isPitcherFilter) return parts[1].trim()
+    }
+    return header
+  }
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -61,6 +75,16 @@ export default function PlayerTable({ players }) {
     return parseFloat(val).toFixed(2)
   }
 
+  function handleDraftClick(player) {
+    if (biddingPlayerId === player.id) {
+      setBiddingPlayerId(null)
+    } else {
+      setBiddingPlayerId(player.id)
+    }
+  }
+
+  const colCount = 2 + (statHeaders.length || 2) + 1
+
   return (
     <div className="player-table-wrapper">
       <div className="table-controls">
@@ -99,7 +123,7 @@ export default function PlayerTable({ players }) {
               </th>
               {statHeaders.map(h => (
                 <th key={h} onClick={() => toggleSort(h)} className="sortable">
-                  {h} <SortIcon col={h} />
+                  {getDisplayLabel(h)} <SortIcon col={h} />
                 </th>
               ))}
               {statHeaders.length === 0 && (
@@ -118,64 +142,79 @@ export default function PlayerTable({ players }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={3 + (statHeaders.length || 2) + 1} className="empty-row">
+                <td colSpan={colCount} className="empty-row">
                   No players match your filters.
                 </td>
               </tr>
             ) : (
-              filtered.map(player => (
-                <tr
-                  key={player.id}
-                  draggable
-                  onDragStart={e => {
-                    e.dataTransfer.setData('playerId', player.id)
-                    e.dataTransfer.effectAllowed = 'copy'
-                    // Custom drag ghost: small pill with player name
-                    const ghost = document.createElement('div')
-                    ghost.textContent = player.name
-                    ghost.style.cssText = [
-                      'position:fixed', 'top:-200px', 'left:0',
-                      'background:#388bfd', 'color:#fff',
-                      'padding:5px 14px', 'border-radius:20px',
-                      'font:600 13px/1.4 system-ui,sans-serif',
-                      'white-space:nowrap', 'pointer-events:none',
-                      'box-shadow:0 4px 12px rgba(0,0,0,0.4)',
-                    ].join(';')
-                    document.body.appendChild(ghost)
-                    e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 16)
-                    setTimeout(() => document.body.removeChild(ghost), 0)
-                  }}
-                  className="draggable-row"
-                >
-                  <td className="player-name">{player.name}</td>
-                  <td><span className="pos-badge">{player.position}</span></td>
-                  {statHeaders.length > 0
-                    ? statHeaders.map(h => (
-                        <td key={h} className="num-cell">
-                          {fmtStat(player.statCols?.[h])}
-                        </td>
-                      ))
-                    : (
-                      <>
-                        <td className="num-cell">
-                          {player.projectedValue != null ? player.projectedValue.toFixed(1) : '—'}
-                        </td>
-                        <td className="num-cell dollar-val">
-                          {player.dollarValue != null ? `$${player.dollarValue.toFixed(0)}` : '—'}
-                        </td>
-                      </>
-                    )
-                  }
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => setDraftingPlayer(player)}
+              filtered.map(player => {
+                const isBidding = biddingPlayerId === player.id
+                return (
+                  <React.Fragment key={player.id}>
+                    <tr
+                      draggable
+                      onDragStart={e => {
+                        e.dataTransfer.setData('playerId', player.id)
+                        e.dataTransfer.effectAllowed = 'copy'
+                        const ghost = document.createElement('div')
+                        ghost.textContent = player.name
+                        ghost.style.cssText = [
+                          'position:fixed', 'top:-200px', 'left:0',
+                          'background:#388bfd', 'color:#fff',
+                          'padding:5px 14px', 'border-radius:20px',
+                          'font:600 13px/1.4 system-ui,sans-serif',
+                          'white-space:nowrap', 'pointer-events:none',
+                          'box-shadow:0 4px 12px rgba(0,0,0,0.4)',
+                        ].join(';')
+                        document.body.appendChild(ghost)
+                        e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 16)
+                        setTimeout(() => document.body.removeChild(ghost), 0)
+                      }}
+                      className={`draggable-row ${isBidding ? 'bidding-active' : ''}`}
                     >
-                      Draft
-                    </button>
-                  </td>
-                </tr>
-              ))
+                      <td className="player-name">{player.name}</td>
+                      <td><span className="pos-badge">{player.position}</span></td>
+                      {statHeaders.length > 0
+                        ? statHeaders.map(h => (
+                            <td key={h} className="num-cell">
+                              {fmtStat(player.statCols?.[h])}
+                            </td>
+                          ))
+                        : (
+                          <>
+                            <td className="num-cell">
+                              {player.projectedValue != null ? player.projectedValue.toFixed(1) : '—'}
+                            </td>
+                            <td className="num-cell dollar-val">
+                              {player.dollarValue != null ? `$${player.dollarValue.toFixed(0)}` : '—'}
+                            </td>
+                          </>
+                        )
+                      }
+                      <td>
+                        <button
+                          className={`btn btn-sm ${isBidding ? 'btn-ghost' : 'btn-primary'}`}
+                          onClick={() => handleDraftClick(player)}
+                        >
+                          {isBidding ? 'Cancel' : 'Draft'}
+                        </button>
+                      </td>
+                    </tr>
+                    {isBidding && (
+                      <BiddingExpansionRow
+                        player={player}
+                        colCount={colCount}
+                        allTeams={state.teams}
+                        allPlayers={state.players}
+                        onSelectTeam={teamId => {
+                          setBiddingPlayerId(null)
+                          setDraftingPlayer({ ...player, _preselectedTeamId: teamId })
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
+                )
+              })
             )}
           </tbody>
         </table>
@@ -184,9 +223,60 @@ export default function PlayerTable({ players }) {
       {draftingPlayer && (
         <AssignPlayerModal
           player={draftingPlayer}
+          preselectedTeamId={draftingPlayer._preselectedTeamId || null}
           onClose={() => setDraftingPlayer(null)}
         />
       )}
     </div>
+  )
+}
+
+function BiddingExpansionRow({ player, colCount, allTeams, allPlayers, onSelectTeam }) {
+  const teamRows = allTeams.map(team => {
+    const teamPlayers = allPlayers.filter(p => p.teamId === team.id)
+    const budget = remainingBudget(team, allPlayers)
+    const openSlots = availableSlotsForPlayer(player.position, teamPlayers)
+    return { team, budget, openSlots }
+  })
+
+  // Sort: teams with open slots first, then by budget desc
+  const sorted = [...teamRows].sort((a, b) => {
+    if (a.openSlots.length > 0 && b.openSlots.length === 0) return -1
+    if (a.openSlots.length === 0 && b.openSlots.length > 0) return 1
+    return b.budget - a.budget
+  })
+
+  return (
+    <tr className="bidding-expansion-row">
+      <td colSpan={colCount} className="bidding-expansion-cell">
+        <div className="bidding-expansion-header">
+          <strong>{player.name}</strong> — select a team to draft:
+        </div>
+        <div className="bidding-teams-grid">
+          {sorted.map(({ team, budget, openSlots }) => {
+            const hasSlot = openSlots.length > 0
+            return (
+              <div
+                key={team.id}
+                className={`bidding-team-card ${hasSlot ? 'has-slot' : 'no-slot'}`}
+                onClick={hasSlot ? () => onSelectTeam(team.id) : undefined}
+                title={hasSlot ? `Draft to ${team.name}` : 'No eligible open slot'}
+              >
+                <div className="bidding-team-name">{team.name}</div>
+                <div className="bidding-team-budget">${budget} left</div>
+                <div className="bidding-team-slots">
+                  {hasSlot
+                    ? openSlots.map(s => (
+                        <span key={s.slot} className="bidding-slot-tag">✓ {s.slot}</span>
+                      ))
+                    : <span className="bidding-no-slot">✗ no slot</span>
+                  }
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </td>
+    </tr>
   )
 }
