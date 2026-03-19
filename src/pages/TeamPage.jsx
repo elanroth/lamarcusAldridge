@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom'
 import { useDraft } from '../context/DraftContext'
 import { remainingBudget } from '../utils/helpers'
 import { TOTAL_BUDGET, ROSTER_SLOT_DEFINITIONS } from '../utils/constants'
+import FieldView from '../components/FieldView'
 
 export default function TeamPage() {
   const { teamId } = useParams()
   const { state, dispatch } = useDraft()
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
+  const [rosterView, setRosterView] = useState('list')
 
   const team = state.teams.find(t => t.id === teamId)
   if (!team) {
@@ -106,6 +108,21 @@ export default function TeamPage() {
           )}
         </div>
         <div className="topbar-right">
+          <div className="view-toggle">
+            <button
+              className={`btn btn-sm ${rosterView === 'list' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setRosterView('list')}
+            >
+              ☰ List
+            </button>
+            <button
+              className={`btn btn-sm ${rosterView === 'field' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setRosterView('field')}
+            >
+              ⚾ Field
+            </button>
+          </div>
+          <div className="divider-v" />
           <button className="btn btn-danger btn-sm" onClick={handleRemoveTeam}>
             Remove Team
           </button>
@@ -139,14 +156,48 @@ export default function TeamPage() {
 
         <div className="team-content">
 
-          {/* Roster Grid */}
+          {/* Roster Grid / Field View */}
           <section className="roster-section">
             <h2 className="section-title">Roster</h2>
-            {batterGroups.map(group => (
-              <div key={group.label} className="roster-group">
-                <div className="roster-group-label">{group.label}</div>
-                <div className={`roster-grid roster-grid-${group.label.toLowerCase()}`}>
-                  {group.rows.map((row, i) => (
+            {rosterView === 'field' ? (
+              <FieldView rosterPlayers={rosterPlayers} onUnassign={handleUnassign} />
+            ) : null}
+            {rosterView === 'list' && (
+              <>
+                {batterGroups.map(group => (
+                  <div key={group.label} className="roster-group">
+                    <div className="roster-group-label">{group.label}</div>
+                    <div className={`roster-grid roster-grid-${group.label.toLowerCase()}`}>
+                      {group.rows.map((row, i) => (
+                        <div key={i} className={`roster-slot ${row.player ? 'filled' : 'empty'} ${row.player?.status === 'keeper' ? 'keeper' : ''}`}>
+                          <div className="roster-slot-label">{row.label}</div>
+                          {row.player ? (
+                            <div className="roster-slot-player">
+                              <div className="roster-player-name">{row.player.name}</div>
+                              <div className="roster-player-meta">
+                                <span className="pos-badge">{row.player.position}</span>
+                                <span className="roster-price">${row.player.purchasedPrice}</span>
+                                {row.player.status === 'keeper' && <span className="keeper-tag">K</span>}
+                              </div>
+                              <button
+                                className="roster-remove-btn"
+                                onClick={() => handleUnassign(row.player.id)}
+                                title="Remove from roster"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="roster-slot-empty">Empty</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="roster-divider"><span>Pitchers</span></div>
+                <div className="roster-grid">
+                  {pitcherRows.map((row, i) => (
                     <div key={i} className={`roster-slot ${row.player ? 'filled' : 'empty'} ${row.player?.status === 'keeper' ? 'keeper' : ''}`}>
                       <div className="roster-slot-label">{row.label}</div>
                       {row.player ? (
@@ -171,35 +222,8 @@ export default function TeamPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-            <div className="roster-divider"><span>Pitchers</span></div>
-            <div className="roster-grid">
-              {pitcherRows.map((row, i) => (
-                <div key={i} className={`roster-slot ${row.player ? 'filled' : 'empty'} ${row.player?.status === 'keeper' ? 'keeper' : ''}`}>
-                  <div className="roster-slot-label">{row.label}</div>
-                  {row.player ? (
-                    <div className="roster-slot-player">
-                      <div className="roster-player-name">{row.player.name}</div>
-                      <div className="roster-player-meta">
-                        <span className="pos-badge">{row.player.position}</span>
-                        <span className="roster-price">${row.player.purchasedPrice}</span>
-                        {row.player.status === 'keeper' && <span className="keeper-tag">K</span>}
-                      </div>
-                      <button
-                        className="roster-remove-btn"
-                        onClick={() => handleUnassign(row.player.id)}
-                        title="Remove from roster"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="roster-slot-empty">Empty</div>
-                  )}
-                </div>
-              ))}
-            </div>
+              </>
+            )}
           </section>
 
           {/* Purchased Players List */}
