@@ -1,6 +1,14 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useDraft } from '../context/DraftContext'
-import { availableSlotsForPlayer, remainingBudget, uid } from '../utils/helpers'
+import { availableSlotsForPlayer, remainingBudget, uid, parsePositions } from '../utils/helpers'
+
+/** Lower score = more preferred slot */
+function slotPriority(slot, playerPositions) {
+  if (playerPositions.includes(slot)) return 0
+  if (slot === 'MI' || slot === 'CI') return 1
+  if (slot === 'UTIL') return 2
+  return 3
+}
 
 export default function AddKeeperModal({ onClose }) {
   const { state, dispatch } = useDraft()
@@ -42,6 +50,20 @@ export default function AddKeeperModal({ onClose }) {
       : [],
     [selectedPlayer, teamPlayers, teamId, isRookieKeeper]
   )
+
+  const playerPositions = useMemo(() =>
+    selectedPlayer ? parsePositions(selectedPlayer.position) : [],
+    [selectedPlayer]
+  )
+
+  // Auto-select highest-priority slot whenever options change
+  useEffect(() => {
+    if (slotOptions.length === 0) { setRosterSlot(''); return }
+    const best = [...slotOptions].sort((a, b) =>
+      slotPriority(a.slot, playerPositions) - slotPriority(b.slot, playerPositions)
+    )[0]
+    setRosterSlot(best.slot)
+  }, [slotOptions, playerPositions])
 
   const budget = selectedTeam ? remainingBudget(selectedTeam, state.players) : null
   const priceNum = parseFloat(price)
@@ -219,27 +241,30 @@ export default function AddKeeperModal({ onClose }) {
           {!isRookieKeeper && (
             <div className="form-group">
               <label>Roster Slot</label>
-              {selectedPlayer && teamId ? (
-                slotOptions.length > 0 ? (
-                  <select
-                    className="input"
-                    value={rosterSlot}
-                    onChange={e => setRosterSlot(e.target.value)}
-                  >
-                    <option value="">— Select slot —</option>
-                    {slotOptions.map(s => (
-                      <option key={s.slot} value={s.slot}>
-                        {s.label} ({s.remaining} open)
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="field-error">No eligible open slots on this team.</p>
-                )
+              {!selectedPlayer || !teamId ? (
+                <select className="input" disabled><option>Select player and team first</option></select>
+              ) : slotOptions.length === 0 ? (
+                <p className="field-error">No eligible open slots on this team.</p>
               ) : (
-                <select className="input" disabled>
-                  <option>Select player and team first</option>
-                </select>
+                <div className="slot-radio-group">
+                  {slotOptions.map(s => (
+                    <label
+                      key={s.slot}
+                      className={`slot-radio-option ${rosterSlot === s.slot ? 'selected' : ''}`}
+                      onClick={() => setRosterSlot(s.slot)}
+                    >
+                      <input
+                        type="radio"
+                        name="rosterSlot"
+                        value={s.slot}
+                        checked={rosterSlot === s.slot}
+                        onChange={() => setRosterSlot(s.slot)}
+                      />
+                      <span className="slot-radio-label">{s.label}</span>
+                      <span className="slot-radio-remaining">{s.remaining} open</span>
+                    </label>
+                  ))}
+                </div>
               )}
             </div>
           )}

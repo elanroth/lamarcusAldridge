@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDraft } from '../context/DraftContext'
 import PlayerTable from '../components/PlayerTable'
 import TeamOverview from '../components/TeamOverview'
 import StandingsPanel from '../components/StandingsPanel'
+import DraftLog from '../components/DraftLog'
 import CSVImport from '../components/CSVImport'
 import AddTeamModal from '../components/AddTeamModal'
 import AddKeeperModal from '../components/AddKeeperModal'
@@ -15,12 +16,47 @@ export default function Dashboard() {
   const [dropAssign, setDropAssign] = useState(null) // { player, teamId }
   const [view, setView] = useState('players')
 
+  const picks = state.picks || []
+
+  useEffect(() => {
+    if (picks.length === 0) return
+    function handler(e) { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [picks.length])
+
   const availablePlayers = state.players.filter(p => p.status === 'available')
 
   function handlePlayerDrop(playerId, teamId) {
     const player = state.players.find(p => p.id === playerId)
     if (!player) return
     setDropAssign({ player, teamId })
+  }
+
+  function handleUndo() {
+    if (picks.length === 0) return
+    const last = picks[picks.length - 1]
+    if (window.confirm(`Undo: ${last.playerName} → ${state.teams.find(t => t.id === last.teamId)?.name} ($${last.price})?`)) {
+      dispatch({ type: 'UNDO_LAST_PICK' })
+    }
+  }
+
+  function handleExport() {
+    const rows = [['Team', 'Player', 'Position', 'Slot', 'Type', 'Price', 'Proj $', 'Delta']]
+    for (const team of state.teams) {
+      const teamPlayers = state.players.filter(p => p.teamId === team.id)
+      for (const p of teamPlayers) {
+        const delta = p.dollarValue != null ? (p.dollarValue - p.purchasedPrice).toFixed(0) : ''
+        rows.push([team.name, p.name, p.position, p.rosterSlot || '', p.status, p.purchasedPrice ?? '', p.dollarValue != null ? p.dollarValue.toFixed(0) : '', delta])
+      }
+    }
+    const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+      download: 'auction-draft.csv',
+    })
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   function handleResetDraft() {
@@ -66,6 +102,12 @@ export default function Dashboard() {
             >
               Standings
             </button>
+            <button
+              className={`btn btn-sm ${view === 'log' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setView('log')}
+            >
+              Log {picks.length > 0 && <span className="log-count">{picks.length}</span>}
+            </button>
           </div>
           <div className="divider-v" />
           <CSVImport />
@@ -79,6 +121,14 @@ export default function Dashboard() {
             + Add Team
           </button>
           <div className="divider-v" />
+          <button className="btn btn-ghost btn-sm" onClick={handleExport} title="Export draft to CSV">
+            Export
+          </button>
+          {picks.length > 0 && (
+            <button className="btn btn-ghost btn-sm" onClick={handleUndo} title="Undo last pick">
+              Undo
+            </button>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={handleResetDraft}>
             Reset Draft
           </button>
@@ -90,7 +140,9 @@ export default function Dashboard() {
 
       <div className="dashboard-layout">
         <main className="dashboard-main">
-          {view === 'standings' ? (
+          {view === 'log' ? (
+            <DraftLog />
+          ) : view === 'standings' ? (
             <StandingsPanel />
           ) : state.players.length === 0 ? (
             <div className="empty-state">

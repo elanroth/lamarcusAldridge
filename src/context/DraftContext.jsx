@@ -10,6 +10,7 @@ const initialState = {
   players: [],
   teams: [],
   statHeaders: [], // the 6 display column headers from the xlsx
+  picks: [],       // { id, timestamp, playerId, playerName, position, teamId, price, rosterSlot, type, custom }
 }
 
 function reducer(state, action) {
@@ -109,20 +110,49 @@ function reducer(state, action) {
 
     case 'ASSIGN_PLAYER': {
       // action: { playerId, teamId, price, rosterSlot, isKeeper, isRookieKeeper }
+      const assignedPlayer = state.players.find(p => p.id === action.playerId)
+      const pickType = action.isRookieKeeper ? 'rookie_keeper' : action.isKeeper ? 'keeper' : 'purchased'
+      const newPick = {
+        id: uid(),
+        timestamp: Date.now(),
+        playerId: action.playerId,
+        playerName: assignedPlayer?.name || '',
+        position: assignedPlayer?.position || '',
+        teamId: action.teamId,
+        price: action.price,
+        rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
+        type: pickType,
+        custom: false,
+      }
       return {
         ...state,
         players: state.players.map(p =>
           p.id === action.playerId
             ? {
                 ...p,
-                status: action.isRookieKeeper ? 'rookie_keeper' : action.isKeeper ? 'keeper' : 'purchased',
+                status: pickType,
                 teamId: action.teamId,
                 purchasedPrice: action.price,
                 rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
               }
             : p
         ),
+        picks: [...(state.picks || []), newPick],
       }
+    }
+
+    case 'UNDO_LAST_PICK': {
+      const picks = state.picks || []
+      if (picks.length === 0) return state
+      const last = picks[picks.length - 1]
+      const newPlayers = last.custom
+        ? state.players.filter(p => p.id !== last.playerId)
+        : state.players.map(p =>
+            p.id === last.playerId
+              ? { ...p, status: 'available', teamId: null, purchasedPrice: null, rosterSlot: null }
+              : p
+          )
+      return { ...state, players: newPlayers, picks: picks.slice(0, -1) }
     }
 
     case 'UNASSIGN_PLAYER': {
@@ -153,8 +183,9 @@ function reducer(state, action) {
     }
 
     case 'ADD_AND_ASSIGN_KEEPER': {
+      const newPlayerId = uid()
       const newPlayer = {
-        id: uid(),
+        id: newPlayerId,
         name: action.player.name.trim(),
         position: action.player.position.trim().toUpperCase(),
         statCols: {},
@@ -165,7 +196,19 @@ function reducer(state, action) {
         purchasedPrice: action.price,
         rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
       }
-      return { ...state, players: [...state.players, newPlayer] }
+      const keeperPick = {
+        id: uid(),
+        timestamp: Date.now(),
+        playerId: newPlayerId,
+        playerName: action.player.name.trim(),
+        position: action.player.position.trim().toUpperCase(),
+        teamId: action.teamId,
+        price: action.price,
+        rosterSlot: action.isRookieKeeper ? null : action.rosterSlot,
+        type: action.isRookieKeeper ? 'rookie_keeper' : 'keeper',
+        custom: true,
+      }
+      return { ...state, players: [...state.players, newPlayer], picks: [...(state.picks || []), keeperPick] }
     }
 
     case 'SEED_PLAYERS': {
@@ -293,6 +336,7 @@ function reducer(state, action) {
       return {
         ...state,
         teams: [],
+        picks: [],
         players: state.players.map(p => ({
           ...p,
           status: 'available',
@@ -307,6 +351,7 @@ function reducer(state, action) {
       // Keep teams and players but clear all assignments
       return {
         ...state,
+        picks: [],
         players: state.players.map(p => ({
           ...p,
           status: 'available',

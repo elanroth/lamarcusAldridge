@@ -932,3 +932,69 @@ select.input { cursor: pointer; }
   padding: 48px;
   color: var(--text-dim);
 }
+
+/* ─── $/spot on team cards ──────────────────────────────────────────── */
+.dps { font-size: 11px; color: var(--text-muted); }
+.dps-warn  { color: var(--yellow); }
+.dps-danger { color: var(--red); font-weight: 600; }
+
+/* ─── Budget bar health colors ──────────────────────────────────────── */
+.team-mini-bar-fill.bar-healthy { background: var(--blue); }
+.team-mini-bar-fill.bar-warn    { background: var(--yellow); }
+.team-mini-bar-fill.bar-danger  { background: var(--red); }
+
+/* ─── Log count badge on tab ────────────────────────────────────────── */
+.log-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 5px;
+  background: var(--blue-subtle);
+  color: var(--blue);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ─── Draft log view ────────────────────────────────────────────────── */
+.draft-log-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px 20px;
+  gap: 10px;
+}
+.draft-log-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.draft-log-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.draft-log-table .log-pick-num { color: var(--text-dim); width: 32px; }
+.draft-log-table .log-time { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.draft-log-table .log-na { color: var(--text-dim); }
+.draft-log-table tr.log-keeper td { background: rgba(188, 140, 255, 0.04); }
+.draft-log-table tr.log-rookie td { background: rgba(240, 136, 62, 0.04); }
+.log-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+.log-type-badge.log-keeper  { background: var(--purple-subtle); color: var(--purple); }
+.log-type-badge.log-rookie  { background: var(--accent-subtle); color: var(--accent); }

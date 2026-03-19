@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useDraft } from '../context/DraftContext'
 import { availableSlotsForPlayer, remainingBudget } from '../utils/helpers'
 import AssignPlayerModal from './AssignPlayerModal'
@@ -17,6 +17,10 @@ export default function PlayerTable({ players }) {
   const [sortDir, setSortDir] = useState('desc')
   const [draftingPlayer, setDraftingPlayer] = useState(null)
   const [biddingPlayerId, setBiddingPlayerId] = useState(null)
+  const [hoveredPlayerId, setHoveredPlayerId] = useState(null)
+  const hoveredPlayerRef = useRef(null)
+
+  useEffect(() => { hoveredPlayerRef.current = hoveredPlayerId }, [hoveredPlayerId])
 
   const positionGroups = [ALL_POS_FILTER, 'Hitters', 'Pitchers', 'C', '1B', '2B', '3B', 'SS', 'OF', 'SP', 'RP']
 
@@ -64,6 +68,21 @@ export default function PlayerTable({ players }) {
         return 0
       })
   }, [players, search, posFilter, sortKey, sortDir, statHeaders])
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key !== 'd' && e.key !== 'D') return
+      const tag = e.target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (draftingPlayer) return
+      const pid = hoveredPlayerRef.current
+      if (!pid) return
+      const player = filtered.find(p => p.id === pid)
+      if (player) handleDraftClick(player)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [draftingPlayer, filtered])
 
   function SortIcon({ col }) {
     if (sortKey !== col) return <span className="sort-icon">↕</span>
@@ -153,6 +172,8 @@ export default function PlayerTable({ players }) {
                   <React.Fragment key={player.id}>
                     <tr
                       draggable
+                      onMouseEnter={() => setHoveredPlayerId(player.id)}
+                      onMouseLeave={() => setHoveredPlayerId(null)}
                       onDragStart={e => {
                         e.dataTransfer.setData('playerId', player.id)
                         e.dataTransfer.effectAllowed = 'copy'

@@ -67,8 +67,12 @@ export default function TeamOverview({ onPlayerDrop }) {
         {state.teams.map(team => {
           const roster = state.players.filter(p => p.teamId === team.id && p.status !== 'rookie_keeper')
           const remaining = remainingBudget(team, state.players)
-          const spent = TOTAL_BUDGET - remaining
-          const pct = Math.min(100, Math.max(0, Math.round(((spent || 0) / TOTAL_BUDGET) * 100)))
+          const budget = team.budget ?? TOTAL_BUDGET
+          const spent = budget - remaining
+          const pct = Math.min(100, Math.max(0, Math.round(((spent || 0) / budget) * 100)))
+          const openSpots = TOTAL_ROSTER_SPOTS - roster.length
+          const dollarPerSpot = openSpots > 0 ? remaining / openSpots : Infinity
+          const barHealth = dollarPerSpot >= 10 ? 'bar-healthy' : dollarPerSpot >= 5 ? 'bar-warn' : 'bar-danger'
 
           return (
             <div
@@ -103,11 +107,13 @@ export default function TeamOverview({ onPlayerDrop }) {
                 </span>
               </div>
               <div className="team-mini-bar-bg">
-                <div className="team-mini-bar-fill" style={{ width: `${pct}%` }} />
+                <div className={`team-mini-bar-fill ${barHealth}`} style={{ width: `${pct}%` }} />
               </div>
               <div className="team-card-sub">
                 <span>{roster.length}/{TOTAL_ROSTER_SPOTS}</span>
-                <span>${spent} spent</span>
+                <span className={`dps ${dollarPerSpot < 5 ? 'dps-danger' : dollarPerSpot < 10 ? 'dps-warn' : ''}`}>
+                  {openSpots > 0 ? `$${Math.round(dollarPerSpot)}/spot` : 'full'}
+                </span>
               </div>
             </div>
           )
