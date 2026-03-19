@@ -1,4 +1,4 @@
-import { ROSTER_SLOT_DEFINITIONS } from './constants'
+import { ROSTER_SLOT_DEFINITIONS, TOTAL_BUDGET } from './constants'
 
 /** Parse a position string like "2B/SS" → ["2B", "SS"] */
 export function parsePositions(posStr) {
@@ -43,10 +43,11 @@ export function uid() {
 
 /** Calculate remaining budget for a team given the full players list */
 export function remainingBudget(team, allPlayers) {
+  const budget = team.budget ?? TOTAL_BUDGET
   const spent = allPlayers
     .filter(p => p.teamId === team.id && p.purchasedPrice != null && p.status !== 'rookie_keeper')
-    .reduce((sum, p) => sum + p.purchasedPrice, 0)
-  return team.budget - spent
+    .reduce((sum, p) => sum + (Number(p.purchasedPrice) || 0), 0)
+  return budget - spent
 }
 
 /** Normalise CSV header names to camelCase keys we expect */

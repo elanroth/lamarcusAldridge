@@ -47,7 +47,7 @@ export default function AddKeeperModal({ onClose }) {
   const priceNum = parseFloat(price)
   const overBudget = budget != null && !isNaN(priceNum) && priceNum > budget
 
-  const canSubmit = selectedPlayer && teamId && price !== '' && !overBudget &&
+  const canSubmit = selectedPlayer && teamId && price !== '' && !isNaN(priceNum) && !overBudget &&
     (isRookieKeeper || rosterSlot !== '')
 
   function handleSubmit(e) {
