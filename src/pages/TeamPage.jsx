@@ -25,7 +25,8 @@ export default function TeamPage() {
   const teamPlayers = state.players.filter(p => p.teamId === teamId)
   const rosterPlayers = teamPlayers.filter(p => p.status !== 'rookie_keeper')
   const remaining = remainingBudget(team, state.players)
-  const spent = TOTAL_BUDGET - remaining
+  const budget = team.budget ?? TOTAL_BUDGET
+  const spent = budget - remaining
 
   function handleUnassign(playerId) {
     if (window.confirm('Remove this player from the roster and return them to available?')) {
@@ -116,16 +117,16 @@ export default function TeamPage() {
         {/* Budget Summary */}
         <div className="budget-summary-card">
           <div className="budget-stat">
-            <span className="budget-label">Total Budget</span>
-            <span className="budget-value">${TOTAL_BUDGET}</span>
+            <span className="budget-label">Budget</span>
+            <span className="budget-value">${budget}</span>
           </div>
           <div className="budget-stat">
             <span className="budget-label">Spent</span>
-            <span className="budget-value spent">${spent}</span>
+            <span className="budget-value spent">${isNaN(spent) ? 0 : spent}</span>
           </div>
           <div className="budget-stat">
             <span className="budget-label">Remaining</span>
-            <span className={`budget-value ${remaining < 20 ? 'low' : 'remaining'}`}>${remaining}</span>
+            <span className={`budget-value ${!isNaN(remaining) && remaining < 20 ? 'low' : 'remaining'}`}>${isNaN(remaining) ? budget : remaining}</span>
           </div>
           <div className="budget-stat">
             <span className="budget-label">Roster</span>
